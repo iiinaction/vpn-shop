@@ -359,7 +359,8 @@ async def process_about(call:CallbackQuery, session_without_commit:AsyncSession,
     payload = json.dumps({
         "user_id": user_info.telegram_id,
         "product_id": product_id,
-        "price": price
+        "price": price,
+        "days" : None
     })
 
     await bot.send_invoice(
@@ -488,6 +489,9 @@ async def pre_checkout_query(query:PreCheckoutQuery):
         # await UserDAO.add_user_vpn(user, vpn.id, 30)
 
 
+
+
+#В РАБОТЕ 
 @client.callback_query(F.data.startswith('category_'))
 async def choose_country(callback:CallbackQuery, user:User):
     await callback.answer('Выбор региона')
@@ -495,10 +499,7 @@ async def choose_country(callback:CallbackQuery, user:User):
     await callback.message.edit_text(f'🏳️<b>Выберите регион</b> \n\n Советуем выбирать регион поближе к вам для меньшей задержки',
                                      reply_markup=await kb.get_countries(vpn_category_id, user))
 
-
-
-
-
+#В РАБОТЕ 
 @client.callback_query(F.data=='back_to_choose_category')
 async def choose_vpn_category(event: Message | CallbackQuery):
     if isinstance(event, Message):
@@ -508,18 +509,7 @@ async def choose_vpn_category(event: Message | CallbackQuery):
         await event.answer('Выбор протокола')
         await event.message.edit_text('🌎<b>Выбор протокола</b> \n\n Outline - ?')
 
-
-
-
-
-
-
-
-
-
-
-
-    
+#В РАБОТЕ   
 @client.callback_query(F.data.startswith('country_'))
 async def create_connection(callback:CallbackQuery, user:User, bot:Bot, state:FSMContext):
     vpn_id = callback.data.split('_')[1]
@@ -553,7 +543,7 @@ async def create_connection(callback:CallbackQuery, user:User, bot:Bot, state:FS
         await state.updaet_data(vpn=vpn)
         await callback.message.answer(f'<b>{vpn.name}</b> \n Цена: {vpn.price} RUB в месяц. \n\n')
 
-
+#В РАБОТЕ 
 @client.callback_query(F.data == 'stars')
 async def topup_stars(callback: CallbackQuery, state:FSMContext):
     await callback.answer('Произведите оплату')

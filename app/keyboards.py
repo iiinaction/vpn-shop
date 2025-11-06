@@ -70,7 +70,7 @@ def key_options_kb(key_email: str) -> InlineKeyboardMarkup:
     price = 150
     month = 30
     if key_email.startswith('payed'):
-        kb.button(text="Инструкция по подключению", callback_data="instructions")
+        kb.button(text="🟩Инструкция по подключению", callback_data="instructions")
         kb.button(text="🔄Продлить на месяц", callback_data=f"update|{key_email}|{price}|{month}")
         kb.button(text="🔄Продлить на 3 месяца", callback_data=f"update|{key_email}|{price*3}|{month*3}")
         kb.button(text="🔄Продлить на 6 месяцев", callback_data=f"update|{key_email}|{price*6}|{month*6}")
@@ -88,16 +88,16 @@ def key_options_kb(key_email: str) -> InlineKeyboardMarkup:
 
 def get_product_buy_kb(price) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=f'💸 Оплатить{price}₽', pay=True)],
+        [InlineKeyboardButton(text=f'💸 Оплатить {price}₽', pay=True)],
         [InlineKeyboardButton(text='🔙 Назад', callback_data='my_keys')]
     ])
 
 def instructions_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text="💬 Iphone", callback_data="instruction_iphone")
-    kb.button(text="💬 Android", callback_data="instruction_android")
-    kb.button(text="💬 TV приставка", callback_data="instruction_tv")
-    kb.button(text="💬 Windows", callback_data="instruction_windows")
+    kb.button(text="🍏 Iphone", callback_data="instruction_iphone")
+    kb.button(text="🤖 Android", callback_data="instruction_android")
+    kb.button(text="📺 TV приставка", callback_data="instruction_tv")
+    kb.button(text="💻 Windows", callback_data="instruction_windows")
     kb.button(text='🏠На главную', callback_data='home')
     kb.adjust(1)
     return kb.as_markup()
@@ -113,7 +113,7 @@ def support_help_kb() -> InlineKeyboardMarkup:
 
 def products() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text=f"💬 Приставка для TV", url="https://t.me/iiinacc")
+    kb.button(text=f"📺 Приставка для TV", url="https://t.me/iiinacc")
     kb.button(text=f"💬 Умный роутер", url="https://t.me/iiinacc")
 
     kb.button(text='🏠На главную', callback_data='home')

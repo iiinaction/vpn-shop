@@ -98,14 +98,15 @@ def instructions_kb() -> InlineKeyboardMarkup:
     kb.button(text="🤖 Android", callback_data="instruction_android")
     kb.button(text="📺 TV приставка", callback_data="instruction_tv")
     kb.button(text="💻 Windows", callback_data="instruction_windows")
+    kb.button(text='🔙 Назад', callback_data='my_keys')
     kb.button(text='🏠На главную', callback_data='home')
     kb.adjust(1)
     return kb.as_markup()
 
+
+
 def support_help_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text='🗝️Мои подключения', callback_data='my_keys')
-    kb.button(text='🔙 Назад', callback_data='instructions')
     kb.button(text=f"💬 Написать в поддержку", url="https://t.me/iiinacc")
     kb.button(text='🏠На главную', callback_data='home')
     kb.adjust(1)

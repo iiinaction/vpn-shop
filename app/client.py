@@ -205,8 +205,9 @@ async def keys_catalog(callback: CallbackQuery, session_without_commit: AsyncSes
     await callback.message.delete()
 
     catalog_data = await VPNDAO.find_all(session=session_without_commit)
-    now = datetime.utcnow()
-    catalog_data = [vpn for vpn in catalog_data if vpn.expiry_time is None or vpn.expiry_time > now]
+    #ТУТ УБИРАЛИ TRIAL из списка по дате окончания
+    # now = datetime.utcnow()
+    # catalog_data = [vpn for vpn in catalog_data if vpn.expiry_time is None or vpn.expiry_time > now]
 
     await callback.message.answer(
         text="Выберите VPN ключ",
@@ -301,7 +302,7 @@ async def show_instruction(call:CallbackQuery, session_without_commit: AsyncSess
     # Берём нужный текст
     text = instructions.get(platform, "Инструкция не найдена 😅")
 
-    await call.message.edit_text(text, reply_markup=kb.support_help_kb())
+    await call.message.edit_text(text, reply_markup=kb.go_on_main())
     await call.answer()
 
 
@@ -317,7 +318,7 @@ async def go_support(call:CallbackQuery, session_without_commit: AsyncSession):
                               f"Обязательно приложите скриншот ошибки и настроек из вашего VPN-приложения. \n"
                               f"Это нужно чтобы мы могли понять, какое устройство вы подключаете, и в чем именно проблема."
                               f"💬 Написать в поддержку 👇",
-                              reply_markup=kb.support_help()
+                              reply_markup=kb.support_help_kb()
                               )
 
 
@@ -330,7 +331,7 @@ async def go_support(call:CallbackQuery, session_without_commit: AsyncSession):
     await call.message.answer(text = f"👨‍💻 Техническая поддержка: \n\n"
                               f"Обязательно приложите скриншот ошибки и настроек из вашего VPN-приложения. \n Это нужно чтобы мы могли понять, какое устройство вы подключаете, и в чем именно проблема."
                               f"💬 Написать в поддержку 👇",
-                              reply_markup=kb.support_help()
+                              reply_markup=kb.support_help_kb()
                               )
     
 #Кнопка МОИ ПРОДУКТЫ (В РАБОТЕ) - поменять текст
@@ -425,38 +426,48 @@ async def successful_paymant(message:Message, session_with_commit:AsyncSession, 
     category_vpn = 2
     data = json.loads(message.successful_payment.invoice_payload)
 
-    user_id = int(data.get("email").split("_")[1])
     price = int(data.get("price"))
-    days = int(data.get("days"))
+    try:
+        days = int(data.get("days"))
+    except (TypeError, ValueError):
+        days = None
     key_email = str(data.get("email"))
     
-    user = await UserDAO.find_one_or_none(
-        session=session_with_commit,
-        filters=TelegramIDModel(telegram_id=user_id)
-    )
+   
 
     if message.successful_payment.total_amount != price * 100:
         await message.edit_text("❌ Ошибка: сумма оплаты не совпадает.")
         return
     
     if days: 
+        user_id = int(data.get("email").split("_")[1])
+        user = await UserDAO.find_one_or_none(
+                                                session=session_with_commit,
+                                                filters=TelegramIDModel(telegram_id=user_id)
+                                            )
         vpn_data = await UserDAO.update_vpn(session=session_with_commit, user = user, key_email = key_email, days=days)
         expiry_str = vpn_data.expiry_time.strftime("%d.%m.%Y")
+        expiry_dt = datetime.strptime(expiry_str, "%d.%m.%Y")
         access_url = vpn_data.access_url
         now = datetime.now()
-        delta = expiry_str - now
+        delta = expiry_dt - now
         days_left = delta.days
         await message.answer(text=f"✅<b>Благодарим за использование нашего сервиса</b> \n"
                              f"🔁 <b>Ваш ключ продлён на {days} </b>\n"                            
-                             f"🗓 Новый срок действия: {expiry_str}\n"
+                             f"🗓 Новый срок окончания: {expiry_str}\n"
                              f"⌛ Осталось дней: {days_left}\n",
                             reply_markup=kb.go_on_main())
     else:
+        user_id = int(data.get("user_id"))
+        user = await UserDAO.find_one_or_none(
+                                                session=session_with_commit,
+                                                filters=TelegramIDModel(telegram_id=user_id))
         vpn_data = await UserDAO.add_user_payed_vpn(session=session_with_commit, user= user, category_vpn=category_vpn)
         expiry_str = vpn_data.expiry_time.strftime("%d.%m.%Y")
+        expiry_dt = datetime.strptime(expiry_str, "%d.%m.%Y")
         access_url = vpn_data.access_url
         now = datetime.now()
-        delta = expiry_str - now
+        delta = expiry_dt - now
         days_left = delta.days
         await message.answer(text=f"✅<b>Благодарим за использование нашего сервиса</b> \n"
                              f"Ваш ключ: \n"                            

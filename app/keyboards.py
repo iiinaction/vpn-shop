@@ -13,6 +13,7 @@ def client_main_kb(user_info) -> InlineKeyboardMarkup:
         kb.button(text='⌛Пробный период', callback_data='get_trial')
     kb.button(text='🗝️Мои подключения', callback_data='my_keys')       # было my_profile
     kb.button(text='🌍Купить VPN', callback_data='catalog')
+    kb.button(text='📄Правила использования сервиса', callback_data='rules')
     kb.button(text='👨‍💻Тех.Поддержка', callback_data='support')
     # kb.button(text='💌О нас', callback_data='products')               # здесь будет кнопка с моими готовыми решениями
     if user_info.id in settings.ADMIN_IDS:

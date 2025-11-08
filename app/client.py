@@ -33,7 +33,7 @@ async def send_main_menu(message:Message, session_with_commit:AsyncSession, stat
         filters = TelegramIDModel(telegram_id = user_id)
     )
     if user_info:
-        if user_info.trial_until and user_info.trial_until > datetime.now():
+        if user_info.is_trial_used and user_info.trial_until and user_info.trial_until > datetime.now():
             trial_until = user_info.trial_until  # naive datetime в UTC
             now = datetime.utcnow()              # текущее UTC время, naive
             remaining = trial_until - now
@@ -93,11 +93,15 @@ async def get_trial_vpn(callback:CallbackQuery, session_with_commit:AsyncSession
     #     id=f"send_msg_{user_id}_{vpn_key.id}"
     #     )
     # scheduler.add_job(
+    #     func = 
+    # )
+    # scheduler.add_job(
     #     func = delete_access_key, 
     #     trigger = DateTrigger(run_date=delete_trigger),
     #     args = [vpn_key.id],
     #     id=f"delete_key_{vpn_key.id}"
     #     )
+    
     await callback.message.delete()
     await callback.message.answer(f'✅<b>Благодарим за использование нашего сервиса!</b>\n\n'
                                       f'Серевер успешно создан!\n<b>Ключ подключения:</b> \n\n'
@@ -369,7 +373,7 @@ async def process_about(call:CallbackQuery, session_without_commit:AsyncSession,
         title=f'Оплата 👉 {price}₽',
         description=f'Пожалуйста, завершите оплату в размере {price}₽, чтобы получить свой VPN ключ на 30 дней',
         payload = payload,
-        provider_token=settings.TEST_PROVIDER_TOKEN,
+        provider_token=settings.PROVIDER_TOKEN,
         currency='RUB',
         prices=[LabeledPrice(
             label=f'Оплата {price}',
@@ -406,7 +410,7 @@ async def process_about(call:CallbackQuery, session_without_commit:AsyncSession,
         title=f'Оплата 👉 {price}₽',
         description=f'Пожалуйста, завершите оплату в размере {price}₽, чтобы продлить свой VPN ключ.',
         payload = payload,
-        provider_token=settings.TEST_PROVIDER_TOKEN,
+        provider_token=settings.PROVIDER_TOKEN,
         currency='RUB',
         prices=[LabeledPrice(
             label=f'Оплата {price}',

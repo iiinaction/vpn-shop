@@ -9,13 +9,13 @@ import json
 
 def client_main_kb(user_info) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    if user_info.trial_until is None:
-        kb.button(text='⌛Пробный период', callback_data='get_trial')
+    #if user_info.trial_until is None:
+    #    kb.button(text='⌛Пробный период', callback_data='get_trial')
     kb.button(text='🗝️Мои подключения', callback_data='my_keys')       # было my_profile
     kb.button(text='🌍Купить VPN', callback_data='catalog')
+    kb.button(text='💌 Оборудование для дома', callback_data='products')               # здесь будет кнопка с моими готовыми решениям
     kb.button(text='📄Правила использования сервиса', callback_data='rules')
     kb.button(text='👨‍💻Тех.Поддержка', callback_data='support')
-    # kb.button(text='💌О нас', callback_data='products')               # здесь будет кнопка с моими готовыми решениями
     if user_info.id in settings.ADMIN_IDS:
         kb.button(text='⚙️Админ панель', callback_data='admin_panel')
     kb.adjust(1)
@@ -115,9 +115,9 @@ def support_help_kb() -> InlineKeyboardMarkup:
 
 def products() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    kb.button(text=f"📺 Приставка для TV", url="https://t.me/iiinacc")
-    kb.button(text=f"💬 Умный роутер", url="https://t.me/iiinacc")
-
+    kb.button(text=f"📺 Приставка для TV", url="https://docs.google.com/document/d/1-5FiKRc8yam7ZjeCC0iV_BhV9xYTDfLS8-F18iqvJW4/edit?usp=sharing")
+    kb.button(text=f"💬 Умный роутер", url="https://docs.google.com/document/d/1qEvXr3bZNywdviLRMKthgoByxiNCXo582nLI_RHUDak/edit?usp=sharing")
+    kb.button(text=f"🛒 Заказать", url="https://t.me/iiinacc")
     kb.button(text='🏠На главную', callback_data='home')
     kb.adjust(1)
     return kb.as_markup()

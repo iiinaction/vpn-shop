@@ -110,7 +110,7 @@ async def get_trial_vpn(callback:CallbackQuery, session_with_commit:AsyncSession
     await callback.message.answer(text=f'✅<b>Благодарим за использование нашего сервиса!</b>\n\n'
                                       f'Серевер успешно создан!\n<b>Ключ подключения:</b> \n\n'
                                       f'<code>{vpn_key.access_url}</code>',
-                                      reply_markup=kb.key_option_trial_kb
+                                      reply_markup=kb.key_option_trial_kb()
                                       )
     await callback.answer('Успех!')
     
@@ -275,10 +275,24 @@ async def go_home(call:CallbackQuery, session_with_commit:AsyncSession, state:FS
         session = session_with_commit,
         filters = TelegramIDModel(telegram_id = user_id)
     )
-    await call.message.answer(
-        text="🏠 Главное меню",
-        reply_markup=kb.client_main_kb(user_info)
-    )
+    if user_info:
+        if user_info.trial_until and user_info.trial_until > datetime.now():    
+            trial_until = user_info.trial_until  # naive datetime в UTC
+            now = datetime.utcnow()              # текущее UTC время, naive
+            remaining = trial_until - now
+            days = remaining.days                # количество полных дней
+            hours = remaining.seconds // 3600 
+            await call.message.answer(
+                    text = f'🤖<b>Добро пожаловать</b> \n\n🆓Ваш пробный период действует еще дней: {days} часов: {hours}',
+                    reply_markup=kb.client_main_kb(user_info)
+                    )
+        else:
+            await call.message.answer(
+                    text=f'🤖<b>Добро пожаловать</b> \n\nПриобретайте безопасный,устойчивый высокоскоростной VPN у нас!',
+                    reply_markup=kb.client_main_kb(user_info)
+                )
+        await state.clear()
+        return
     await call.answer()
 
 #Кнопка ИНСТРУКЦИЯ (В РАБОТЕ)
@@ -368,6 +382,7 @@ async def go_products(call:CallbackQuery, session_without_commit: AsyncSession):
 #Функция покупки ()
 @client.callback_query(F.data.startswith('buy_'))
 async def process_about(call:CallbackQuery, session_without_commit:AsyncSession, state:FSMContext):
+    await call.message.delete()
     user_info = await UserDAO.find_one_or_none(
         session=session_without_commit,
         filters=TelegramIDModel(telegram_id=call.from_user.id)
@@ -400,6 +415,7 @@ async def process_about(call:CallbackQuery, session_without_commit:AsyncSession,
 #Функция продления (РАБОТАЕТ) по дням, категория стоит в ручную
 @client.callback_query(F.data.startswith('update|'))
 async def process_about(call:CallbackQuery, session_without_commit:AsyncSession, state:FSMContext):
+    await call.message.delete()
     user_info = await UserDAO.find_one_or_none(
         session=session_without_commit,
         filters=TelegramIDModel(telegram_id=call.from_user.id)

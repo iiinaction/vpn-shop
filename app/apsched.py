@@ -1,5 +1,4 @@
 #from app.outline_api import delete_access_key
-from app.dao.user_dao import UserDAO, VPNDAO
 from app.dao.database import async_session_maker
 from app.bot import api
 from loguru import logger
@@ -22,6 +21,7 @@ async def send_message(user_id: int, email: str):
     else:
         print(f"Клиент с email {email} не найден в py3xui")
     async with async_session_maker() as session:
+        from app.dao.user_dao import UserDAO
         await UserDAO.delete_user_vpn(session, tg_id=user_id, email=email)
         print(f"Удалён {email} у пользователя {user_id}")
 

@@ -48,7 +48,11 @@ def catalog_kb(catalog_data: List[VPNCategory]) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     print("Загружаем каталог...")
     for category in catalog_data:
-        kb.button(text=category.name, callback_data=f"buy_{category.id}_{category.price}")
+        if category.name.lower() == "vless_payed":
+            button_text = f"💎 Премиум VPN Финлядния — {category.price}₽"
+        else:
+            button_text = f"{category.name} — {category.price}₽"    
+        kb.button(text=button_text, callback_data=f"buy_{category.id}_{category.price}")
     kb.button(text="🏠 На главную", callback_data="home")
     kb.adjust(1)
     return kb.as_markup() 
@@ -57,8 +61,16 @@ def catalog_key_kb(catalog_data: List[VPN]) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     print("Загружаем каталог ключей...")
     for category in catalog_data:
-        kb.button(text=f"🔑{category.email}", callback_data=f"show_{category.email}")  
+        if category.email.startswith("payed_"):
+            button_text = f"💎Оплаченный VPN ключ {category.email}"
+        elif category.email.startswith("trial_"):
+            button_text = f"🧪 Пробный VPN {category.email}"
+        else:
+            button_text = f"{category.email} — до {category.expiry_time}"    
+        kb.button(text=button_text, callback_data=f"show_{category.email}")
+ 
     kb.button(text="🏠 На главную", callback_data="home")
+    
     kb.adjust(1)
     return kb.as_markup()
 

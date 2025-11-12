@@ -9,14 +9,14 @@ import json
 
 def client_main_kb(user_info) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
-    #if user_info.trial_until is None:
-    #    kb.button(text='⌛Пробный период', callback_data='get_trial')
+    if user_info.trial_until is None:
+        kb.button(text='⌛Пробный период', callback_data='get_trial')
     kb.button(text='🗝️Мои подключения', callback_data='my_keys')       # было my_profile
     kb.button(text='🌍Купить VPN', callback_data='catalog')
     kb.button(text='💌 Оборудование для дома', callback_data='products')               # здесь будет кнопка с моими готовыми решениям
     kb.button(text='📄Правила использования сервиса', callback_data='rules')
     kb.button(text='👨‍💻Тех.Поддержка', callback_data='support')
-    if user_info.id in settings.ADMIN_IDS:
+    if user_info.telegram_id in settings.ADMIN_IDS:
         kb.button(text='⚙️Админ панель', callback_data='admin_panel')
     kb.adjust(1)
     return kb.as_markup()
@@ -80,6 +80,7 @@ def key_options_kb(key_email: str) -> InlineKeyboardMarkup:
         kb.button(text="🏠 На главную", callback_data="home")
         kb.adjust(1)
     else:
+        kb.button(text="🟩Инструкция по подключению", callback_data="instructions")
         kb.button(text='🔙 Назад', callback_data='my_keys')
         kb.button(text="🏠 На главную", callback_data="home")
         kb.adjust(1)
@@ -122,6 +123,13 @@ def products() -> InlineKeyboardMarkup:
     kb.adjust(1)
     return kb.as_markup()
 
+def key_option_trial_kb()->InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    print("Открываем информацию о ключе...")
+    kb.button(text="🟩Инструкция по подключению", callback_data="instructions")
+    kb.button(text='🏠На главную', callback_data='home')
+    kb.adjust(1)
+    return kb.as_markup()
 
 
 async def sendall_choose_client():

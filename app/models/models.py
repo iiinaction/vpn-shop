@@ -55,7 +55,11 @@ class VPN(Base):
     # --- связи ---
     category_id: Mapped[int] = mapped_column(ForeignKey('vpn_categories.id'))
     category: Mapped['VPNCategory'] = relationship(back_populates='vpns', lazy="selectin")
-    users: Mapped[list['UserVPN']] = relationship(back_populates='vpn', lazy="selectin")
+    users: Mapped[list['UserVPN']] = relationship(
+            back_populates='vpn',
+            lazy="selectin",
+            cascade="all, delete-orphan"
+        )
 
     @hybrid_property
     def price(self) -> int:

@@ -9,6 +9,10 @@ from uuid import uuid4
 from pprint import pprint
 from app.dao.base import BaseDAO
 
+from apscheduler.triggers.date import DateTrigger
+from app.bot import scheduler
+from app.apsched import send_message, send_notification
+
 from app.services.xui import create_trial, update_month
 from app.bot import api
 
@@ -124,6 +128,12 @@ class UserDAO(BaseDAO[User]):
                          until=until,
                          status =True)
                          )
+            stmt = (
+                 update(User)
+                 .where(User.telegram_id == user.id)
+                 .values(is_trial_used=True)
+            )
+
             # Обновляем trial_until у самого объекта user
             user.trial_until = vpn_obj.expiry_time 
             # vpn_obj.current_conn += 1            
@@ -252,34 +262,29 @@ class UserDAO(BaseDAO[User]):
         vpn.current_conn += 1
         await self.session.commit()
 
-    #Обновить статус VPN у пользователя ДЛЯ  ТРИАЛА (ПЕРЕДЕЛАТЬ)
-    async def delete_user_vpn(self, tg_id: int, vpn_id: int) -> None:
+    #Обновить статус VPN у пользователя ДЛЯ  ТРИАЛА (ПЕРЕДЕЛАТЬ)   (В РААААААБОТЕЕЕ!!!)
+    @classmethod
+    async def delete_user_vpn(cls, session:AsyncSession, tg_id: int, email: int) -> None:
         """
-        Помечает VPN как отключённый для пользователя и уменьшает счётчик подключений.
-
         Args:
             tg_id (int): Telegram ID пользователя.
             vpn_id (int): ID VPN сервера.
-
-        Raises:
-            ValueError: Если пользователь или VPN не найдены.
         """
-        user = await self.session.scalar(select(User).where(User.tg_id == tg_id))
+        user = await session.scalar(select(User).where(User.telegram_id == tg_id))
         if user is None:
             raise ValueError(f'User с id{tg_id} не найден!')
-        vpn = await self.session.scalar(select(VPN).where(VPN.id == vpn_id))
+        vpn = await session.scalar(select(VPN).where(VPN.email == email ))
         if vpn is None:
-            raise ValueError(f'VPN с id:{tg_id} не найден!')
-        await self.session.execute(
-            update(UserVPN).where(
-                and_(
-                    UserVPN.user_id == user.id, 
-                    UserVPN.vpn_id == vpn_id
-                )
-            ).values(status=False)
+            raise ValueError(f'VPN {email} не найден!')
+
+        await session.execute(
+            update(User)
+            .where(User.id == user.id)
+            .values(is_trial_used=False)
             )
-        vpn.current_conn = max(0, vpn.current_conn - 1)
-        await self.session.commit()
+        
+        await session.delete(vpn)
+        await session.commit()
 
 
 

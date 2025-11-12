@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel
 from loguru import logger
- 
+from app.models.models import User, UserVPN
+
 T = TypeVar("T", bound = Base)
 
 class BaseDAO(Generic[T]):
@@ -65,7 +66,22 @@ class BaseDAO(Generic[T]):
             logger.error(f"Ошибка при поиске всех записей по фильтрам {filter_dict}: {e}")
             raise
 
+    @classmethod
+    async def find_all_by_telegram_id(cls, session: AsyncSession, telegram_id: int):
+        try:
+            stmt = (
+                select(cls.model)
+                .join(UserVPN, UserVPN.vpn_id == cls.model.id)
+                .join(User, User.id == UserVPN.user_id)
+                .where(User.telegram_id == telegram_id)
+            )
+            result = await session.execute(stmt)
+            return result.scalars().all()
+        except SQLAlchemyError as e:
+            logger.error(f"Ошибка при поиске всех записей по фильтру telegram id = {telegram_id}: {e}")
+            raise
 
+    
     # Обновляем таблицы в SQL
     @classmethod
     async def update(cls, session: AsyncSession, obj_id: str, values: BaseModel, **extra_fields):

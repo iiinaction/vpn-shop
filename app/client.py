@@ -17,14 +17,13 @@ from app.schemas.schemas import TelegramIDModel, UserModel, VPNEmailFilter
 from app.bot import bot
 from app.config import settings
 
-from app.bot import api
 from app.services.xui import create_trial, update_month
 import json
 
 #Работа с middlewares
 client = Router()
 
-#Авторизация пользователя
+#Авторизация пользователя    (В РАБОТЕ !!! # user_info.is_trial_used () - НУЖНО ПРОВЕРЯТЬ НА ЭТО УСЛОВИЕ ЕЩЕ !!!!
 @client.message(CommandStart())
 async def send_main_menu(message:Message, session_with_commit:AsyncSession, state:FSMContext):
     user_id = message.from_user.id
@@ -33,14 +32,14 @@ async def send_main_menu(message:Message, session_with_commit:AsyncSession, stat
         filters = TelegramIDModel(telegram_id = user_id)
     )
     if user_info:
-        if user_info.is_trial_used and user_info.trial_until and user_info.trial_until > datetime.now():
+        if user_info.trial_until and user_info.trial_until > datetime.now():    
             trial_until = user_info.trial_until  # naive datetime в UTC
             now = datetime.utcnow()              # текущее UTC время, naive
             remaining = trial_until - now
             days = remaining.days                # количество полных дней
             hours = remaining.seconds // 3600 
             await message.answer(
-                    text = f'🤖<b>Добро пожаловать</b> \n\n🆓Ваш пробный период действует еще {days} дней {hours} часа',
+                    text = f'🤖<b>Добро пожаловать</b> \n\n🆓Ваш пробный период действует еще дней: {days} часов: {hours}',
                     reply_markup=kb.client_main_kb(user_info)
                     )
         else:
@@ -83,29 +82,36 @@ async def get_trial_vpn(callback:CallbackQuery, session_with_commit:AsyncSession
         user=user_info, 
         category_vpn=category_vpn, 
         until=trial_until)
-    # delete_trigger = user_info.trial_until
-
     
-    # scheduler.add_job(
-    #     func = send_notification,
-    #     trigger= DateTrigger(run_date=delete_trigger-timedelta(days=3)),
-    #     kwargs = {'user' : user_id, 'vpn_name': vpn_key.name},
-    #     id=f"send_msg_{user_id}_{vpn_key.id}"
-    #     )
-    # scheduler.add_job(
-    #     func = 
-    # )
-    # scheduler.add_job(
-    #     func = delete_access_key, 
-    #     trigger = DateTrigger(run_date=delete_trigger),
-    #     args = [vpn_key.id],
-    #     id=f"delete_key_{vpn_key.id}"
-    #     )
+    #Тригеры
+    # delete_trigger = trial_until
+    notification_trigger = datetime.now() + timedelta(days=4)
+    delete_trigger = datetime.now() + timedelta(days=7)
+
+   
+
+    # Задачи scheduler
+    # Уведолмение о том что заканчивается через 3 дня
+    scheduler.add_job(
+        func = send_notification,
+        trigger= DateTrigger(run_date=notification_trigger),
+        kwargs = {'user' : user_id, 'vpn_name': vpn_key.email},
+        id=f"send_msg_{user_id}_{vpn_key.email}"
+        )
+    #Удаление ключа триала устанвока is_trial_used: True
+    scheduler.add_job(
+        func = send_message, 
+        trigger = DateTrigger(run_date=delete_trigger),           
+        args = [user_id, vpn_key.email],
+        id=f"delete_key_{vpn_key.email}"
+        )
     
     await callback.message.delete()
-    await callback.message.answer(f'✅<b>Благодарим за использование нашего сервиса!</b>\n\n'
+    await callback.message.answer(text=f'✅<b>Благодарим за использование нашего сервиса!</b>\n\n'
                                       f'Серевер успешно создан!\n<b>Ключ подключения:</b> \n\n'
-                                      f'<code>{vpn_key.access_url}</code>')
+                                      f'<code>{vpn_key.access_url}</code>',
+                                      reply_markup=kb.key_option_trial_kb
+                                      )
     await callback.answer('Успех!')
     
 @client.callback_query(F.data == 'my_profile')
@@ -208,16 +214,23 @@ async def keys_catalog(callback: CallbackQuery, session_without_commit: AsyncSes
     await callback.answer('Загрузка каталога ключей...')
     await callback.message.delete()
 
-    catalog_data = await VPNDAO.find_all(session=session_without_commit)
+    catalog_data = await VPNDAO.find_all_by_telegram_id(session=session_without_commit, telegram_id = callback.from_user.id)
+    
     #ТУТ УБИРАЛИ TRIAL из списка по дате окончания
     # now = datetime.utcnow()
     # catalog_data = [vpn for vpn in catalog_data if vpn.expiry_time is None or vpn.expiry_time > now]
-
-    await callback.message.answer(
-        text="Выберите VPN ключ",
-        reply_markup=kb.catalog_key_kb(catalog_data)
-    )
-
+    if catalog_data:
+        await callback.message.answer(
+            text="Выберите VPN ключ",
+            reply_markup=kb.catalog_key_kb(catalog_data)
+        )
+    else:
+        all_data = await VPNDAOCategory.find_all(session=session_without_commit)
+        catalog_data = [c for c in all_data if c.name != "VLESS_trial"]
+        await callback.message.answer(
+            text=f"У вас пока нет купленных ключей VPN \n\n Купить 👇",
+            reply_markup=kb.catalog_kb(catalog_data)
+        )
 
 #Callback выбора ключей по кнопке
 @client.callback_query(F.data.startswith("show_"))
@@ -373,7 +386,7 @@ async def process_about(call:CallbackQuery, session_without_commit:AsyncSession,
         title=f'Оплата 👉 {price}₽',
         description=f'Пожалуйста, завершите оплату в размере {price}₽, чтобы получить свой VPN ключ на 30 дней',
         payload = payload,
-        provider_token=settings.PROVIDER_TOKEN,
+        provider_token=settings.TEST_PROVIDER_TOKEN,
         currency='RUB',
         prices=[LabeledPrice(
             label=f'Оплата {price}',
@@ -410,7 +423,7 @@ async def process_about(call:CallbackQuery, session_without_commit:AsyncSession,
         title=f'Оплата 👉 {price}₽',
         description=f'Пожалуйста, завершите оплату в размере {price}₽, чтобы продлить свой VPN ключ.',
         payload = payload,
-        provider_token=settings.PROVIDER_TOKEN,
+        provider_token=settings.TEST_PROVIDER_TOKEN,
         currency='RUB',
         prices=[LabeledPrice(
             label=f'Оплата {price}',

@@ -68,9 +68,7 @@ def catalog_key_kb(catalog_data: List[VPN]) -> InlineKeyboardMarkup:
         else:
             button_text = f"{category.email} — до {category.expiry_time}"    
         kb.button(text=button_text, callback_data=f"show_{category.email}")
- 
     kb.button(text="🏠 На главную", callback_data="home")
-    
     kb.adjust(1)
     return kb.as_markup()
 

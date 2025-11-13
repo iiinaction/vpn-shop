@@ -1,4 +1,4 @@
-import asyncio
+from app.services.text_format import humanize_timedelta
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
 from aiogram.filters import CommandStart, Command
@@ -33,13 +33,9 @@ async def send_main_menu(message:Message, session_with_commit:AsyncSession, stat
     )
     if user_info:
         if user_info.trial_until and user_info.trial_until > datetime.now():    
-            trial_until = user_info.trial_until  # naive datetime в UTC
-            now = datetime.utcnow()              # текущее UTC время, naive
-            remaining = trial_until - now
-            days = remaining.days                # количество полных дней
-            hours = remaining.seconds // 3600 
+            delta = user_info.trial_until - datetime.utcnow()
             await message.answer(
-                    text = f'🤖<b>Добро пожаловать</b> \n\n🆓Ваш пробный период действует еще дней: {days} часов: {hours}',
+                    text = f'🤖<b>Добро пожаловать</b> \n\n🆓Ваш пробный период действует еще {humanize_timedelta(delta)}',
                     reply_markup=kb.client_main_kb(user_info)
                     )
         else:
@@ -277,13 +273,9 @@ async def go_home(call:CallbackQuery, session_with_commit:AsyncSession, state:FS
     )
     if user_info:
         if user_info.trial_until and user_info.trial_until > datetime.now():    
-            trial_until = user_info.trial_until  # naive datetime в UTC
-            now = datetime.utcnow()              # текущее UTC время, naive
-            remaining = trial_until - now
-            days = remaining.days                # количество полных дней
-            hours = remaining.seconds // 3600 
+            delta = user_info.trial_until - datetime.utcnow()
             await call.message.answer(
-                    text = f'🤖<b>Добро пожаловать</b> \n\n🆓Ваш пробный период действует еще дней: {days} часов: {hours}',
+                    text = f'🤖<b>Добро пожаловать</b> \n\n🆓Ваш пробный период действует еще {humanize_timedelta(delta)}',
                     reply_markup=kb.client_main_kb(user_info)
                     )
         else:

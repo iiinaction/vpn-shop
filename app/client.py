@@ -16,7 +16,7 @@ from app.dao.user_dao import User, UserDAO, UserVPN, VPNDAOCategory, VPNDAO, VPN
 from app.schemas.schemas import TelegramIDModel, UserModel, VPNEmailFilter
 from app.bot import bot
 from app.config import settings
-
+from loguru import logger
 from app.services.xui import create_trial, update_month
 import json
 
@@ -88,12 +88,17 @@ async def get_trial_vpn(callback:CallbackQuery, session_with_commit:AsyncSession
 
     # Задачи scheduler
     # Уведолмение о том что заканчивается через 3 дня
-    scheduler.add_job(
+    job = scheduler.add_job(
         func = send_notification,
         trigger= DateTrigger(run_date=notification_trigger),
         kwargs = {'user' : user_id, 'vpn_name': vpn_key.email},
         id=f"send_msg_{user_id}_{vpn_key.email}"
         )
+    if job:
+        logger.info(f"Job {job.id} успешно добавлена в Scheduler, следующая дата запуска: {job.next_run_time}")
+    else:
+        logger.info(f"Job send_msg_{user_id}_{vpn_key.email} НЕ добавлена")
+
     #Удаление ключа триала устанвока is_trial_used: True
     scheduler.add_job(
         func = send_message, 
